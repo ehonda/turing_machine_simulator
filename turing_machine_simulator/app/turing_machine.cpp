@@ -1,13 +1,15 @@
 #include "turing_machine.h"
 
 #include <algorithm>
+#include <iterator>
 
 namespace turing_machine_sim::turing_machine {
 
 // -----------------------------------------------------------
 // Transition function definitions
-bool operator<(const TransitionFunctionKey& l,
-	const TransitionFunctionKey& r)
+bool compare_tf_keys_less_than::operator()(
+	const TransitionFunctionKey& l, 
+	const TransitionFunctionKey& r) const noexcept
 {
 	return std::tie(l.tapeSymbol, l.currentState)
 		< std::tie(r.tapeSymbol, r.currentState);
@@ -17,7 +19,14 @@ bool operator<(const TransitionFunctionKey& l,
 
 // -----------------------------------------------------------
 // Tape class
-Tape::Tape() {
+Tape::Tape()
+	: Tape{ { } }
+{	
+}
+
+Tape::Tape(const std::list<Symbol>& input)
+	: tape_(input)
+{
 	tapeHead_ = tape_.begin();
 }
 
@@ -27,8 +36,10 @@ bool Tape::empty() const noexcept {
 			[](const Symbol& s) { return s == BLANK; });
 }
 
-const std::list<Symbol>& Tape::getContent() const noexcept {
-	return tape_;
+bool Tape::hasEqualContent(const Tape& other) const noexcept {
+	auto [start, end] = getFirstAndLastNonBlanks();
+	auto [startOther, endOther] = other.getFirstAndLastNonBlanks();
+	return std::equal(start, end, startOther, endOther);
 }
 
 void Tape::moveHead(Shift shift) {
@@ -61,6 +72,27 @@ void Tape::write(const Symbol& symbol) {
 	else
 		*tapeHead_ = symbol;
 }
+
+std::pair<Tape::TapeConstIterator, Tape::TapeConstIterator>
+	Tape::getFirstAndLastNonBlanks() const noexcept
+{
+	const auto predNotBlank
+		= [](const Symbol& s) { return s != BLANK; };
+
+	const auto start = std::find_if(tape_.cbegin(),
+		tape_.cend(), predNotBlank);
+	const auto end = std::find_if(tape_.crbegin(),
+		tape_.crend(), predNotBlank).base();
+
+	return { start, end };
+}
+
+std::ostream& operator<<(std::ostream& os, const Tape& tape) {
+	auto [start, end] = tape.getFirstAndLastNonBlanks();
+	//std::copy(start, end, std::back_inserter(os));
+	std::copy(start, end, std::ostream_iterator<char>(os, ""));
+	return os;
+}
 // -----------------------------------------------------------
 
 
@@ -89,6 +121,10 @@ void TuringMachine::iterate() {
 	if (!didHalt()) {
 		TransitionFunctionKey key = { tape_.read(), state_ };
 		const auto keyValueIt = transitionFunction_.find(key);
+
+		// Check if there is a rule specified for the tape
+		// configuration and the machines state and halt
+		// if there isnt
 		if (keyValueIt != transitionFunction_.cend()) {
 			const auto value = keyValueIt->second;
 			tape_.write(value.writeSymbol);
@@ -102,5 +138,11 @@ void TuringMachine::iterate() {
 }
 
 // -----------------------------------------------------------
+
+std::ostream& operator<<(std::ostream& os, const TuringMachine& tm)
+{
+	return os;
+	// TODO: insert return statement here
+}
 
 }

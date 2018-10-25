@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <iostream>
 #include <string>
 #include <string_view>
 #include <stdexcept>
@@ -61,8 +62,6 @@ protected:
 		key.tapeSymbol = parseSymbol(ruleTokens[0]);
 		key.currentState = ruleTokens[1];
 
-		auto b = !boost::is_any_of("LRN")(ruleTokens[4][0]);
-
 		// Make value
 		if (ruleTokens[4].size() != 1
 			|| !boost::is_any_of("LRN")(ruleTokens[4][0]))
@@ -91,7 +90,8 @@ protected:
 
 	void expectTapeContent(const Tape& tape, const std::string& content) const {
 		const std::list<Symbol> expectedContent(content.cbegin(), content.cend());
-		EXPECT_EQ(tape.getContent(), expectedContent);
+		const Tape expectedTape(expectedContent);
+		EXPECT_TRUE(tape.hasEqualContent(expectedTape));
 	}
 };
 
@@ -103,6 +103,20 @@ TEST_F(TuringMachineTest, tape_of_all_blanks_is_empty) {
 	t.moveHead(Shift::R);
 	t.write(BLANK);
 	EXPECT_TRUE(t.empty());
+}
+
+TEST_F(TuringMachineTest, tape_content_equality_test) {
+	// Trailing/Leading blank
+	Tape t({ BLANK, '1', BLANK, '1', BLANK });
+	Tape s({ '1', BLANK, '1' });
+	EXPECT_TRUE(t.hasEqualContent(s));
+	EXPECT_TRUE(s.hasEqualContent(t));
+
+	// Equal (subrange)content but one tape is longer
+	t = Tape({ '1', BLANK, '1', '1' });
+	s = Tape({ '1', BLANK, '1' });
+	EXPECT_FALSE(t.hasEqualContent(s));
+	EXPECT_FALSE(s.hasEqualContent(t));
 }
 
 TEST_F(TuringMachineTest, reading_empty_tape_gives_blank) {
@@ -155,13 +169,10 @@ TEST_F(TuringMachineTest, run_2_state_2_symbol_busy_beaver) {
 		= { "", "1", "11", "11", "111", "1111", "1111" };
 	for (std::size_t i = 0; i < expectedTapes.size(); ++i) {
 		expectTapeContent(tm.getTape(), expectedTapes[i]);
+		std::cout << tm.getTape() << std::endl;
 		tm.iterate();
 	}
-
 	expectTapeContent(tm.getTape(), "1111");
-
-	/*const std::list<Symbol> expectedContent = { '1', '1', '1', '1' };
-	EXPECT_EQ(tm.getTape().getContent(), expectedContent);*/
 }
 
 }
