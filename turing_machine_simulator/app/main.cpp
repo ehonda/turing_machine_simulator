@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
 	const auto numberOfIterations = (argc == 2)
 		? std::stoi(argv[1])
 		: MAX_ITERATIONS;
-	for (int i = 0; i < MAX_ITERATIONS && !tm.didHalt(); ++i) {
+	for (std::size_t i = 0; i < numberOfIterations && !tm.didHalt(); ++i) {
 		std::cout << tm << std::endl;
 		tm.iterate();
 	}

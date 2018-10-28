@@ -1,0 +1,129 @@
+md_left_0
+
+# All blank
+#000000
+
+# Invalid tuple length
+0001000
+
+# Example Slides
+#0001011011010110011011010101001010110101000
+
+###################################################
+
+### Parse machine delim left ( 000 )
+###      Requires 3 zeros in sequence or
+###      goes into an infinite loop
+
+## First 0
+(0, md_left_0, 0, md_left_1, R)
+
+## Second 0
+(0, md_left_1, 0, md_left_2, R)
+
+## Third 0
+(0, md_left_2, 0, expect_1_0, R)
+
+## Error conditions
+(1, md_left_0, BLANK, loop, N)
+(BLANK, md_left_0, BLANK, loop, N)
+(1, md_left_1, BLANK, loop, N)
+(BLANK, md_left_1, BLANK, loop, N)
+(1, md_left_2, BLANK, loop, N)
+(BLANK, md_left_2, BLANK, loop, N)
+
+###################################################
+
+### Parse tupel
+###     Checks if tuple exists (1 read) and then
+###     checks its integrity, or tries to read
+###     right machine delim
+
+## Check if there is another tupel
+## or the right machine delim
+(0, expect_1_0, 0, md_right_1, R)
+(1, expect_1_0, 1, find_ed_0, R)
+
+## First element delim
+(1, expect_1_0, 1, find_ed_0, R)
+(1, find_ed_0, 1, find_ed_0, R)
+(0, find_ed_0, 0, find_ed_1, R)
+
+## Second element delim
+(1, expect_1_1, 1, find_ed_1, R)
+(1, find_ed_1, 1, find_ed_1, R)
+(0, find_ed_1, 0, find_ed_2, R)
+
+## Third element delim
+(1, expect_1_2, 1, find_ed_2, R)
+(1, find_ed_2, 1, find_ed_2, R)
+(0, find_ed_2, 0, find_ed_3, R)
+
+## Fourth element delim
+(1, expect_1_3, 1, find_ed_3, R)
+(1, find_ed_3, 1, find_ed_3, R)
+(0, find_ed_3, 0, find_td, R)
+
+## Error conditions
+(BLANK, parse_tupel, BLANK, loop, N)
+(BLANK, find_ed_0, BLANK, loop, N)
+(BLANK, find_ed_1, BLANK, loop, N)
+(BLANK, find_ed_2, BLANK, loop, N)
+(BLANK, find_ed_3, BLANK, loop, N)
+
+(BLANK, expect_1_0, BLANK, loop, N)
+(BLANK, expect_1_1, BLANK, loop, N)
+(BLANK, expect_1_2, BLANK, loop, N)
+(BLANK, expect_1_3, BLANK, loop, N)
+
+(0, expect_1_0, BLANK, loop, N)
+(0, expect_1_1, BLANK, loop, N)
+(0, expect_1_2, BLANK, loop, N)
+(0, expect_1_3, BLANK, loop, N)
+
+
+###################################################
+
+### Transition function element delim
+
+## Find transition function delim
+(1, find_td, 1, find_td, R)
+(0, find_td, 0, td_1, R)
+
+## Expect another 0
+(0, td_1, 0, expect_tupel_or_end, R)
+
+## Expect tupel or end
+(0, expect_tupel_or_end, 0, HALT, N)
+(1, expect_tupel_or_end, 1, find_ed_0, R)
+
+## Error conditions
+(BLANK, find_td, BLANK, loop, N)
+(1, td_1, BLANK, loop, N)
+(BLANK, td_1, BLANK, loop, N)
+(BLANK, expect_tupel_or_end, BLANK, loop, N)
+
+###################################################
+
+### Parse machine delim right
+###     Only used with empty tms
+###     First 0 was already read by parse_tupel
+
+## Second 0
+(0, md_right_1, 0, md_right_2, R)
+
+## Third 0
+(0, md_right_2, 0, HALT, R)
+
+## Error conditions
+(1, md_right_0, BLANK, loop, N)
+(BLANK, md_right_0, BLANK, loop, N)
+(1, md_right_1, BLANK, loop, N)
+(BLANK, md_right_1, BLANK, loop, N)
+(1, md_right_2, BLANK, loop, N)
+(BLANK, md_right_2, BLANK, loop, N)
+
+###################################################
+
+### Loop State
+(BLANK, loop, BLANK, loop, N)
