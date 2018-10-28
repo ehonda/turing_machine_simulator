@@ -18,76 +18,6 @@ namespace turing_machine_sim_test {
 
 class TuringMachineTest : public testing::Test {
 protected:
-	Symbol parseSymbol(std::string_view symbolString) const {
-		if (symbolString == "BLANK")
-			return BLANK;
-		else if (symbolString.size() == 1)
-			return symbolString[0];
-		
-		throw std::invalid_argument("Invalid symbol string");
-	}
-
-	std::pair<TransitionFunctionKey, TransitionFunctionValue>
-		makeRule(std::string_view rule) const 
-	{
-		const std::string ERROR = "Invalid rule string";
-
-		// Preprocess string
-		{
-			const auto trim_pos = rule.find('(');
-			if (trim_pos > rule.size())
-				throw std::invalid_argument(ERROR);
-			rule.remove_prefix(trim_pos + 1);
-		}
-		{
-			const auto trim_pos = rule.find(')');
-			if (trim_pos > rule.size())
-				throw std::invalid_argument(ERROR);
-			rule.remove_suffix(rule.size() - trim_pos);
-		}
-
-		// Extract rule tokens
-		std::vector<std::string> ruleTokens;
-		{
-			std::string strRule(rule);
-			boost::algorithm::split(ruleTokens, strRule, boost::is_any_of(","));
-		}
-		if (ruleTokens.size() != 5)
-			throw std::invalid_argument(ERROR);
-		std::transform(ruleTokens.begin(), ruleTokens.end(), ruleTokens.begin(),
-			[](const std::string& s) { return boost::algorithm::trim_copy(s); });
-
-		// Make key
-		TransitionFunctionKey key;
-		key.tapeSymbol = parseSymbol(ruleTokens[0]);
-		key.currentState = ruleTokens[1];
-
-		// Make value
-		if (ruleTokens[4].size() != 1
-			|| !boost::is_any_of("LRN")(ruleTokens[4][0]))
-		{
-			throw std::invalid_argument(ERROR);
-		}
-
-		TransitionFunctionValue value;
-		value.writeSymbol = parseSymbol(ruleTokens[2]);
-		value.nextState = ruleTokens[3];
-		value.shift = 
-			ruleTokens[4][0] == 'L' ? Shift::L :
-				(ruleTokens[4][0] == 'R' ? Shift::R : Shift::N);
-
-		return { key, value };
-	}
-
-	TransitionFunction makeTransitionFunction(
-		const std::vector<std::string_view>& rules) const
-	{
-		TransitionFunction f;
-		for (auto rule : rules)
-			f.insert(makeRule(rule));
-		return f;
-	}
-
 	void expectTapeContent(const Tape& tape, const std::string& content) const {
 		const std::list<Symbol> expectedContent(content.cbegin(), content.cend());
 		const Tape expectedTape(expectedContent);
@@ -169,10 +99,41 @@ TEST_F(TuringMachineTest, run_2_state_2_symbol_busy_beaver) {
 		= { "", "1", "11", "11", "111", "1111", "1111" };
 	for (std::size_t i = 0; i < expectedTapes.size(); ++i) {
 		expectTapeContent(tm.getTape(), expectedTapes[i]);
-		std::cout << tm.getTape() << std::endl;
 		tm.iterate();
 	}
 	expectTapeContent(tm.getTape(), "1111");
+}
+
+TEST_F(TuringMachineTest, binary_to_unary_converter) {
+	TuringMachine tm("i", makeTransitionFunction({
+		"(0, i, 0, i, R)",
+		"(1, i, 1, i, R)",
+		"(BLANK, i, x, w_b, L)",
+
+		"(0, w_b, 1, w_b, L)",
+		"(1, w_b, 0, g_u, R)",
+		"(BLANK, w_b, BLANK, c, R)",
+		"(1, g_u, 1, g_u, R)",
+		"(x, g_u, x, w_u, R)",
+
+		"(1, w_u, 1, w_u, R)",
+		"(BLANK, w_u, 1, g_b, L)",
+		"(1, g_b, 1, g_b, L)",
+		"(x, g_b, x, w_b, L)",
+
+		"(1, c, BLANK, c, R)",
+		"(x, c, BLANK, HALT, R)"
+		}),
+		{'1', '0', '1'});
+
+	while (!tm.didHalt()) {
+		//std::cout << tm.getTape() << std::endl;
+		std::cout << tm << std::endl;
+		tm.iterate();
+	}
+	//std::cout << tm.getTape() << std::endl;
+	std::cout << tm << std::endl;
+
 }
 
 }

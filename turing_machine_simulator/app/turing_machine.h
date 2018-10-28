@@ -4,6 +4,8 @@
 #include <map>
 #include <ostream>
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace turing_machine_sim::turing_machine {
 
@@ -43,9 +45,14 @@ using TransitionFunction = std::map<
 
 // -----------------------------------------------------------
 // Tape class
+
+// TODO: REFACTOR TAPE INTO OWN HEADER FILE
+class TuringMachine;
+
 class Tape {
 public:
 	friend std::ostream& operator<<(std::ostream&, const Tape&);
+	friend std::ostream& operator<<(std::ostream&, const TuringMachine&);
 
 	Tape();
 	Tape(const std::list<Symbol>& input);
@@ -80,18 +87,27 @@ public:
 	TuringMachine();
 	TuringMachine(const State& initialState, 
 		const TransitionFunction& transitionFunction);
+	TuringMachine(const State& initialState,
+		const TransitionFunction& transitionFunction,
+		const std::list<Symbol>& input);
 
 	const Tape& getTape() const noexcept;
+	std::string getAutotoolDescription() const;
+
 	bool didHalt() const noexcept;
 	void iterate();
 
 private:
 	Tape tape_;
+	State startingState_;
 	State state_;
 	TransitionFunction transitionFunction_;
 };
 
 std::ostream& operator<<(std::ostream& os, const TuringMachine& tm);
+TransitionFunction makeTransitionFunction(
+	const std::vector<std::string>& rules);
+TuringMachine loadTuringMachine(std::string_view path);
 // -----------------------------------------------------------
 
 
